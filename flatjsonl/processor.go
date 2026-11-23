@@ -39,6 +39,7 @@ type Processor struct {
 	includeKeys  map[string]int
 	includeRegex []*regexp.Regexp
 	excludeRegex []*regexp.Regexp
+	license      *keyLicense
 	replaceRegex map[*regexp.Regexp]string
 	extractRegex map[*regexp.Regexp][]extractor
 	constVals    map[int]string
@@ -245,6 +246,10 @@ func NewProcessor(f Flags, cfg Config, inputs ...Input) (*Processor, error) { //
 		}
 	}
 
+	// Compile include/exclude rules once against the source path stage. The
+	// same license is shared by the flattener, key preparation and all writers.
+	p.license = newKeyLicense(cfg, p.includeRegex, p.excludeRegex, f.CaseSensitiveKeys)
+
 	go p.watchMemUsage()
 
 	return p, nil
@@ -304,7 +309,7 @@ func (p *Processor) Process() error {
 
 // PrepareKeys runs first pass of reading if necessary to scan the keys.
 func (p *Processor) PrepareKeys() error {
-	if len(p.includeRegex) == 0 && len(p.cfg.IncludeKeys) > 0 {
+	if !p.license.hasIncludeRegex && p.license.hasIncludeLiterals {
 		p.iterateIncludeKeys()
 	} else {
 		p.pr.Reset()
@@ -375,6 +380,12 @@ func (p *Processor) maybeShowKeys() error {
 		}
 
 		for _, k := range p.flKeysList {
+			// Publish only source paths allowed by the compiled license;
+			// excluded columns must not surface as auto-inferred keys.
+			if !p.license.allowed(k) {
+				continue
+			}
+
 			if _, err := fmt.Fprintln(p.Stdout, `"`+k+`",`); err != nil {
 				println(err.Error())
 			}
@@ -567,11 +578,18 @@ func (p *Processor) iterateForWriters() error {
 	pkTimeFmt := make(map[uint64]string)
 
 	p.flKeys.Range(func(key uint64, value flKey) bool {
-		if i, ok := includeKeys[value.canonical]; ok {
-			pkIndex[key] = i
+		// Defense in depth: the write iterator can only address columns that
+		// the same source-path license permits. An excluded path can never get
+		// a write index even if it remains in the scanned key map. The check
+		// uses the precomputed canonical form, which also covers derived keys
+		// (extract/transpose) that are not present in the raw input.
+		if !p.license.isExcluded(value.canonical) {
+			if i, ok := includeKeys[value.canonical]; ok {
+				pkIndex[key] = i
 
-			if value.transposeDst != "" {
-				pkDst[key] = value.transposeDst
+				if value.transposeDst != "" {
+					pkDst[key] = value.transposeDst
+				}
 			}
 		}
 

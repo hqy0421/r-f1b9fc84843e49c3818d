@@ -1,0 +1,6 @@
+.ip,.ip.NETIP.asns,.ip.GEOIP.city.names.en,.ip.GEOIP.autonomous_system_organization,.foo.link.URL.scheme,.foo.link.URL.user,.foo.link.URL.pass,.foo.link.URL.host,.foo.link.URL.port,request_query_baz_0,request_query_baz_1,request_query_i_0,request_query_quux_0,.foo.link.URL.path.[0],.foo.link.URL.path.[1],.foo.link.URL.fragment,nested_quux
+81.2.69.145,,London,,https,user,pass,example.com,1234,1,2,0,abc,foo,bar,piu,123
+71.96.0.3,"AS701 MCI Communications Services, Inc. d/b/a Verizon Business",,"MCI Communications Services, Inc. d/b/a Verizon Business",https,user,pass,example.com,1234,1,2,1,abc,foo,bar,piu,124
+,,,,https,user,pass,example.com,1234,1,2,2,abc,foo,bar,piu,125
+2001:480:10::1,,San Diego,,https,user,pass,example.com,1234,1,2,3,abc,foo,bar,piu,126
+1.0.0.4,AS15169 Google Inc.,,Google Inc.,https,user,pass,example.com,1234,1,2,4,abc,foo,bar,piu,127

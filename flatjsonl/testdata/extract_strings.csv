@@ -1,0 +1,6 @@
+.foo.link,.foo.link.URL.scheme,.foo.link.URL.user,.foo.link.URL.pass,.foo.link.URL.host,.foo.link.URL.port,.foo.link.URL.query.baz.[0],.foo.link.URL.query.baz.[1],.foo.link.URL.query.i.[0],.foo.link.URL.query.quux.[0],.foo.link.URL.path.[0],.foo.link.URL.path.[1],.foo.link.URL.fragment,.foo.nested,.foo.nested.JSON.quux,.ip
+https://user:pass@example.com:1234/foo/bar/?baz=1&baz=2&quux=abc&i=0#piu,https,user,pass,example.com,1234,1,2,0,abc,foo,bar,piu,"{""quux"":123}",123,81.2.69.145
+https://user:pass@example.com:1234/foo/bar/?baz=1&baz=2&quux=abc&i=1#piu,https,user,pass,example.com,1234,1,2,1,abc,foo,bar,piu,"{""quux"":124}",124,71.96.0.3
+https://user:pass@example.com:1234/foo/bar/?baz=1&baz=2&quux=abc&i=2#piu,https,user,pass,example.com,1234,1,2,2,abc,foo,bar,piu,"{""quux"":125}",125,
+https://user:pass@example.com:1234/foo/bar/?baz=1&baz=2&quux=abc&i=3#piu,https,user,pass,example.com,1234,1,2,3,abc,foo,bar,piu,"{""quux"":126}",126,2001:480:10::1
+https://user:pass@example.com:1234/foo/bar/?baz=1&baz=2&quux=abc&i=4#piu,https,user,pass,example.com,1234,1,2,4,abc,foo,bar,piu,"{""quux"":127}",127,1.0.0.4

@@ -1,0 +1,5 @@
+shared,bar_name,.foo
+1,bar,true
+b,bar,false
+false,bar,true
+10,bar,true

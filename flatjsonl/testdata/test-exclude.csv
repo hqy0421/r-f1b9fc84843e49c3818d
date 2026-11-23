@@ -1,0 +1,5 @@
+sequence,name,wins_0_0,wins_1_0,f00_bar VARCHAR(255),f00_qux_baz VARCHAR(255),nested_literal,foo,bar
+1,Gilbert,straight,one pair,1,abc,,,
+2,"""'Alexa'""",two pair,two pair,,,,,
+3,May,,,,,"{""foo"":1, ""bar"": 2}",1,2
+4,Deloise,three of a kind,,,,,,

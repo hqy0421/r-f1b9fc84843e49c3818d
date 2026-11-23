@@ -1,0 +1,5 @@
+._sequence,shared,.foo
+1,1,true
+2,b::123,false
+3,false,true
+4,10,true

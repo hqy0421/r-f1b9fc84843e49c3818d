@@ -477,12 +477,18 @@ func (p *Processor) prepareScannedKeys() {
 			}
 		}
 
-		if p.f.ShowKeysHier {
-			p.keyHierarchy.Add(k.path)
-		}
+		// Hierarchy and JSON schema are outputs too: render only source paths
+		// that the compiled license permits. The key itself stays in flKeys so
+		// that diagnostic views (e.g. SKIPPED) can still reference it, while
+		// column selection and every writer keep using the same license.
+		if p.license.allowed(k.original) {
+			if p.f.ShowKeysHier {
+				p.keyHierarchy.Add(k.path)
+			}
 
-		if p.f.ShowJSONSchema {
-			p.jsonSchema.AddKey(k, p.flKeys)
+			if p.f.ShowJSONSchema {
+				p.jsonSchema.AddKey(k, p.flKeys)
+			}
 		}
 
 		return true
@@ -558,30 +564,23 @@ func (p *Processor) flKeysInit() {
 	}
 }
 
+// iterateIncludeKeys turns the compiled source-path license into the ordered
+// set of permitted columns. It serves both processing modes: explicit
+// include-only configuration without a scanning pass, and auto-inference over
+// the keys discovered by the scanning pass.
 func (p *Processor) iterateIncludeKeys() {
-	excludeKeys := make(map[string]bool, len(p.cfg.ExcludeKeys))
-	for _, k := range p.cfg.ExcludeKeys {
-		excludeKeys[p.ck(k)] = true
-	}
-
 	i := 0
 
+	// Explicitly declared source paths, denylist always wins over the
+	// allowlist. Constant columns are not source paths and stay untouched.
 	for _, k := range p.cfg.IncludeKeys {
-		if excludeKeys[p.ck(k)] {
+		if strings.HasPrefix(k, "const:") {
+			p.addIncludeKey(k, &i)
+
 			continue
 		}
 
-		exclude := false
-
-		for _, r := range p.excludeRegex {
-			if r.MatchString(k) {
-				exclude = true
-
-				break
-			}
-		}
-
-		if exclude {
+		if !p.license.allowed(k) {
 			continue
 		}
 
@@ -590,7 +589,7 @@ func (p *Processor) iterateIncludeKeys() {
 
 	p.flKeysInit()
 
-	canonicalIncludes := make(map[string]bool)
+	seenCanonical := make(map[string]bool)
 
 	for _, k := range p.flKeysList {
 		if _, ok := p.includeKeys[k]; ok {
@@ -599,49 +598,34 @@ func (p *Processor) iterateIncludeKeys() {
 
 		ck := p.ck(k)
 
-		if excludeKeys[ck] {
+		if seenCanonical[ck] {
 			continue
 		}
 
-		exclude := false
-
-		for _, r := range p.excludeRegex {
-			if r.MatchString(k) {
-				exclude = true
-
-				break
-			}
-		}
-
-		if exclude {
+		if !p.license.allowed(k) {
 			continue
 		}
 
-		if canonicalIncludes[ck] {
-			continue
-		}
-
-		if len(p.includeRegex) > 0 {
-			for _, r := range p.includeRegex {
-				if r.MatchString(k) {
-					canonicalIncludes[k] = true
-
-					p.addIncludeKey(k, &i)
-
-					break
-				}
-			}
-		} else if len(p.cfg.IncludeKeys) == 0 {
-			if !p.f.SkipZeroCols {
-				canonicalIncludes[k] = true
-
-				p.addIncludeKey(k, &i)
-			} else if !p.canonicalKeys[ck].isZero {
-				canonicalIncludes[k] = true
+		// With an explicit allowlist (literals or regex) only matching source
+		// paths are auto-inferred. Without any include rule every non-excluded
+		// scanned path is a column, optionally skipping zero-value ones.
+		if p.license.hasIncludeLiterals || p.license.hasIncludeRegex {
+			if p.license.includeLiterals[ck] || p.license.matchesIncludeRegex(ck) {
+				seenCanonical[ck] = true
 
 				p.addIncludeKey(k, &i)
 			}
+
+			continue
 		}
+
+		if p.f.SkipZeroCols && p.canonicalKeys[ck].isZero {
+			continue
+		}
+
+		seenCanonical[ck] = true
+
+		p.addIncludeKey(k, &i)
 	}
 }
 
