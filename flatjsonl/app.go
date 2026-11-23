@@ -1,0 +1,106 @@
+package flatjsonl
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"runtime/pprof"
+
+	"github.com/bool64/dev/version"
+)
+
+// Main is the entry point for flatjsonl CLI tool.
+func Main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	var (
+		showVersion   bool
+		cpuProfile    string
+		httpStatus    string
+		memProfile    string
+		loopInputSize int
+	)
+
+	f := Flags{}
+
+	f.Register()
+	flag.BoolVar(&showVersion, "version", false, "Show version and exit.")
+	flag.StringVar(&cpuProfile, "dbg-cpu-prof", "", "Write CPU profile to file.")
+	flag.StringVar(&httpStatus, "http-status", "", "Serve status page and pprof endpoints on this address, for example :6060.")
+	flag.StringVar(&memProfile, "dbg-mem-prof", "", "Write mem profile to file.")
+	flag.IntVar(&loopInputSize, "dbg-loop-input-size", 0,
+		"(benchmark) Repeat input until total target size reached, bytes.")
+
+	f.Parse()
+
+	if showVersion {
+		fmt.Println(version.Module("github.com/vearutop/flatjsonl").Version)
+
+		return nil
+	}
+
+	if cpuProfile != "" {
+		f, err := os.Create(cpuProfile)
+		if err != nil {
+			return err
+		}
+
+		if err = pprof.StartCPUProfile(f); err != nil {
+			return err
+		}
+
+		defer pprof.StopCPUProfile()
+	}
+
+	inputs := f.Inputs()
+	if len(inputs) == 0 {
+		flag.Usage()
+
+		return nil
+	}
+
+	if loopInputSize > 0 {
+		i, err := LoopReaderFromFile(inputs[0].FileName, loopInputSize)
+		if err != nil {
+			return fmt.Errorf("failed to init loop reader: %w", err)
+		}
+
+		inputs[0].Reader = i
+		inputs[0].FileName = ""
+	}
+
+	proc, err := New(f)
+	if err != nil {
+		return err
+	}
+
+	if httpStatus != "" {
+		startHTTPStatusServer(httpStatus, proc)
+	}
+
+	if err := proc.Process(); err != nil {
+		return err
+	}
+
+	if memProfile != "" {
+		f, err := os.Create(memProfile)
+		if err != nil {
+			return err
+		}
+
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			return err
+		}
+
+		if err := f.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

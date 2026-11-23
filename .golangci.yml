@@ -1,0 +1,99 @@
+# See https://golangci-lint.run/docs/linters/configuration/
+version: "2"
+run:
+  tests: true
+linters:
+  default: all
+  disable:
+    - exhaustruct_v5
+    - goconst
+    - perfsprint
+    - modernize
+    - funlen
+    - exhaustive
+    - embeddedstructfieldcheck
+    - err113
+    - gosec
+    - noctx
+    - testpackage
+    - noinlineerr
+    - wsl_v5
+    - funcorder
+    - copyloopvar
+    - depguard
+    - dupword
+    - errname
+    - exhaustruct
+    - forbidigo
+    - forcetypeassert
+    - gochecknoglobals
+    - intrange
+    - ireturn
+    - lll
+    - mnd
+    - nonamedreturns
+    - paralleltest
+    - recvcheck
+    - tagalign
+    - tagliatelle
+    - testableexamples
+    - testifylint
+    - varnamelen
+    - wrapcheck
+  settings:
+    nestif:
+      min-complexity: 7
+    dupl:
+      threshold: 100
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    gocyclo:
+      min-complexity: 25
+    gocognit:
+      min-complexity: 40
+    cyclop:
+      max-complexity: 25
+    misspell:
+      locale: US
+    unparam:
+      check-exported: true
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - unqueryvet
+          - gosec
+          - dupl
+          - funlen
+          - goconst
+          - mnd
+          - noctx
+          - unparam
+          - unused
+        path: _test.go
+      - linters:
+          - errcheck
+          - gosec
+        path: example_
+      - linters:
+          - revive
+        text: 'unused-parameter: parameter'
+      - linters:
+          - errcheck
+        text: "Error return value of `fmt.Fprint"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
